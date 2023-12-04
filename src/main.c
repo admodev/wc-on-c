@@ -23,22 +23,50 @@ int count_bytes_in_file(char *filename) {
 }
 
 int count_lines_in_file(char *filename) {
-  FILE* file_pointer;
-  int newline_count;
-  char file_char;
+  FILE *file_pointer;
+  int c, newline_count = 0;
+  size_t n = 0, buffer_size = 1000;
+  char *file_char = malloc(buffer_size);
+
+  if (file_char == NULL) {
+    perror("Memory allocation failed");
+    return 1;
+  }
 
   file_pointer = fopen(filename, "r");
-  file_char = fgetc(file_pointer);
 
-  while(file_char != EOF) {
-    if (file_char == '\n') {
-      newline_count += 1;
+  if (file_pointer == NULL) {
+    perror("Error opening file");
+    free(file_char);
+    return 1;
+  }
+
+  while ((c = fgetc(file_pointer)) != EOF) {
+    file_char[n++] = (char)c;
+
+    if (c == '\n') {
+      newline_count++;
+    }
+
+    if (n == buffer_size - 1) {
+      buffer_size *= 2;
+      char *temp = realloc(file_char, buffer_size);
+      if (temp == NULL) {
+        perror("Memory reallocation failed");
+        free(file_char);
+        fclose(file_pointer);
+        return 1;
+      }
+      file_char = temp;
     }
   }
 
+  file_char[n] = '\0';
   fclose(file_pointer);
 
-  printf("Total lines in file: %d", newline_count);
+  printf("Total lines in file: %d\n", newline_count);
+
+  free(file_char);
 
   return 0;
 }
